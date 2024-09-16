@@ -1,6 +1,8 @@
 #include "terminal.h"
 #include "raylib.h"
+#include "raymath.h"
 #include <assert.h>
+#include <stdio.h>
 
 #define DEFAULT_PADDING 5.f
 #define PAD(x) (x) + DEFAULT_PADDING
@@ -10,6 +12,7 @@
 Vector2 terminal_size;
 Vector2 terminal_position;
 Rectangle inner_terminal;
+Rectangle outer_terminal;
 
 // Left, Top, Right, Bottom
 Vector4 paddings = {DEFAULT_PADDING, 30, DEFAULT_PADDING, DEFAULT_PADDING};
@@ -30,6 +33,9 @@ void init_terminal(Vector2 position, Vector2 size) {
 char INPUTS[MAX_INPUT_LINES][MAX_INPUT_LENGTH] = {0};
 size_t input_count = 0;
 size_t input_length = 0;
+
+int dragging = 0;
+Vector2 origin = {0};
 
 void update_terminal(void) {
   int key;
@@ -53,6 +59,27 @@ void update_terminal(void) {
     input_count++;
     input_length = 0;
     INPUTS[input_count][input_length] = '\0';
+  }
+
+
+  // TODO: Should be handled by desktop.c
+  Rectangle header = {terminal_position.x, terminal_position.y, terminal_size.x,
+                      paddings.y};
+
+  int hovering = CheckCollisionPointRec(GetMousePosition(), header);
+  if (hovering && IsMouseButtonPressed(0)) {
+      dragging = 1;
+      origin = Vector2Subtract(GetMousePosition(), terminal_position);
+  }
+
+  if (IsMouseButtonReleased(0)) {
+      dragging = 0;
+      origin = Vector2Zero();
+  }
+
+  if (dragging) {
+      Vector2 new_position = Vector2Subtract(GetMousePosition(), origin);
+      init_terminal(new_position, terminal_size);
   }
 }
 

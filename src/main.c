@@ -14,6 +14,6 @@ void main_loop(void) {
   ClearBackground(RAYWHITE);
   render_desktop();
 
-  DrawFPS(100, 0);
+  DrawFPS(0, 0);
   EndDrawing();
 }
