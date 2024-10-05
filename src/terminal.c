@@ -5,6 +5,7 @@
 #define MAX_INPUT_LINES 32
 #define MAX_INPUT_LENGTH 255
 
+// TODO: Remove shared buffer between all terminal instances.
 char INPUTS[MAX_INPUT_LINES][MAX_INPUT_LENGTH] = {0};
 size_t input_count = 0;
 size_t input_length = 0;
@@ -34,6 +35,7 @@ void update_terminal(window *w) {
   }
 }
 
+// TODO: Add scrolling
 void render_terminal(window *w) {
   // Render Content
   Vector2 end_position;

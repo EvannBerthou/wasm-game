@@ -2,6 +2,7 @@
 #define WINDOW_H
 
 #include "raylib.h"
+#include <stdint.h>
 
 #define DEFAULT_PADDING 5.f
 #define PAD(x) (x) + DEFAULT_PADDING
@@ -16,12 +17,11 @@ typedef struct window {
     void (*update)(struct window*);
     void (*render)(struct window*);
 
-    int dragging;
     Vector2 origin;
 } window;
 
 
-void update_window(window *w);
+void update_window(window *w, uint8_t id);
 void render_window(window *w);
 
 Rectangle get_window_inner(window *w);

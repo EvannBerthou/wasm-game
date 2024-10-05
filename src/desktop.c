@@ -25,7 +25,6 @@ void init_desktop() {
                       .title = "Terminal",
                       .update = update_terminal,
                       .render = render_terminal,
-                      0,
                       Vector2Zero()};
   add_window(terminal1);
 
@@ -34,7 +33,6 @@ void init_desktop() {
                       .title = "Terminal 2",
                       .update = update_terminal,
                       .render = render_terminal,
-                      0,
                       Vector2Zero()};
   add_window(terminal2);
 
@@ -44,7 +42,7 @@ void init_desktop() {
       .title = "Clock",
       .update = NULL,
       .render = render_clock,
-      0, Vector2Zero()
+      Vector2Zero()
   };
   add_window(clock);
 }
@@ -52,7 +50,7 @@ void init_desktop() {
 void update_desktop(void) {
   for (int i = 0; i < window_count; i++) {
     // TODO: Only one window should be focused
-    update_window(&windows[i]);
+    update_window(&windows[i], i);
   }
 }
 

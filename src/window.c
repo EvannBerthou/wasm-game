@@ -6,21 +6,23 @@
 // Left, Top, Right, Bottom
 Vector4 paddings = {DEFAULT_PADDING, 30, DEFAULT_PADDING, DEFAULT_PADDING};
 
-void update_window(window *w) {
+int dragging = -1;
+
+void update_window(window *w, uint8_t id) {
   Rectangle header = {w->pos.x, w->pos.y, w->size.x, paddings.y};
 
   int hovering = CheckCollisionPointRec(GetMousePosition(), header);
   if (hovering && IsMouseButtonPressed(0)) {
-    w->dragging = 1;
+    dragging = id;
     w->origin = Vector2Subtract(GetMousePosition(), w->pos);
   }
 
   if (IsMouseButtonReleased(0)) {
-    w->dragging = 0;
+    dragging = -1;
     w->origin = Vector2Zero();
   }
 
-  if (w->dragging) {
+  if (dragging == id) {
     Vector2 new_position = Vector2Subtract(GetMousePosition(), w->origin);
     w->pos = new_position;
   }
