@@ -60,7 +60,6 @@ void dialogueParser(Npc *npc){
         fgets(currentLine,100,dialogueFile); 
         if(strcmp(currentLine,"}\n")!=0){
             strcat(finalLine, currentLine);
-            printf("'%s'\n", finalLine);
         }
     }
 

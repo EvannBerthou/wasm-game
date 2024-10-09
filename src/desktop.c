@@ -167,7 +167,7 @@ void update_desktop(void) {
     if (window_active[i] == 0)
       continue;
     int res = update_window(&windows[i]);
-    if (res != -1) {
+    if (res != -1 && res == windows[i].id) {
       get_focused_window()->focused = false;
       set_top_window(res);
       get_focused_window()->focused = true;
@@ -185,7 +185,7 @@ void render_desktop(void) {
   for (int i = 0; i < MAX_WINDOWS_COUNT; i++) {
     if (window_active[i] == 0)
       continue;
-    window *w = &windows[i];
+    window *w = &windows[window_zbuf[i]];
     render_window(w);
 
     DrawTextureRec(w->target.texture, (Rectangle){0, 0, w->size.x, -w->size.y},
