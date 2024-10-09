@@ -1,3 +1,4 @@
+#include "Dungeon/src/main.h"
 #include "clock.h"
 #include "raylib.h"
 #include "raymath.h"
@@ -122,6 +123,14 @@ void init_desktop() {
                   .render = render_clock,
                   Vector2Zero()};
   add_window(clock);
+
+  window dungeon = {.pos = {100, 100},
+                    .size = {960, 540},
+                    .title = "Dungeon",
+                    .init = init_dungeon,
+                    .update = update_dungeon,
+                    .render = render_dungeon};
+  add_window(dungeon);
 }
 
 void update_desktop(void) {
