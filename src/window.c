@@ -8,12 +8,18 @@ Vector4 paddings = {DEFAULT_PADDING, 30, DEFAULT_PADDING, DEFAULT_PADDING};
 
 int dragging = -1;
 
-void update_window(window *w, uint8_t id) {
-  Rectangle header = {w->pos.x, w->pos.y, w->size.x, paddings.y};
+static Rectangle get_border(window *w) {
+  return (Rectangle){w->pos.x - paddings.x, w->pos.y - paddings.y,
+                     w->size.x + paddings.x + paddings.z,
+                     w->size.y + paddings.y + paddings.w};
+}
+
+int update_window(window *w) {
+  Rectangle header = get_border(w);
 
   int hovering = CheckCollisionPointRec(GetMousePosition(), header);
-  if (hovering && IsMouseButtonPressed(0)) {
-    dragging = id;
+  if (hovering && IsMouseButtonPressed(0) && dragging == -1) {
+    dragging = w->id;
     w->origin = Vector2Subtract(GetMousePosition(), w->pos);
   }
 
@@ -22,7 +28,7 @@ void update_window(window *w, uint8_t id) {
     w->origin = Vector2Zero();
   }
 
-  if (dragging == id) {
+  if (dragging == w->id) {
     Vector2 new_position = Vector2Subtract(GetMousePosition(), w->origin);
     w->pos = new_position;
   }
@@ -30,27 +36,19 @@ void update_window(window *w, uint8_t id) {
   if (w->update != NULL) {
     w->update(w);
   }
+  return dragging;
 }
 
 void render_window(window *w) {
   // BORDER
-  DrawRectangleV(w->pos, w->size, LIGHTGRAY);
+  Rectangle border = get_border(w);
+  DrawRectangleRec(border, LIGHTGRAY);
 
-  // Inner
-  Rectangle inner = (Rectangle){w->pos.x + paddings.x, w->pos.y + paddings.y,
-                                w->size.x - paddings.x - paddings.z,
-                                w->size.y - paddings.y - paddings.w};
-
-  DrawRectangleRec(inner, BLACK);
-  DrawText(w->title, INPADV(w->pos), 20, BLACK);
+  DrawText(w->title, INPADV(border), 20, BLACK);
   if (w->render != NULL) {
+    BeginTextureMode(w->target);
+    ClearBackground(BLACK);
     w->render(w);
+    EndTextureMode();
   }
-}
-
-Rectangle get_window_inner(window *w) {
-  Rectangle inner = {w->pos.x + paddings.x, w->pos.y + paddings.y,
-                     w->size.x - paddings.x - paddings.z,
-                     w->size.y - paddings.y - paddings.w};
-  return inner;
 }

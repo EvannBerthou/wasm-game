@@ -10,18 +10,23 @@
 #define INPADV(v) ((v.x) + DEFAULT_PADDING), ((v.y) + DEFAULT_PADDING)
 
 typedef struct window {
-    Vector2 pos;
-    Vector2 size;
-    char title[32];
+  uint8_t id;
+  Vector2 pos;
+  Vector2 size;
+  char title[32];
 
-    void (*update)(struct window*);
-    void (*render)(struct window*);
+  void (*init)(struct window *);
+  void (*update)(struct window *);
+  void (*render)(struct window *);
 
-    Vector2 origin;
+  Vector2 origin;
+
+  void *window_data;
+  bool focused;
+  RenderTexture target;
 } window;
 
-
-void update_window(window *w, uint8_t id);
+int update_window(window *w);
 void render_window(window *w);
 
 Rectangle get_window_inner(window *w);
