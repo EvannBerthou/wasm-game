@@ -5,7 +5,6 @@
 #include "rcamera.h"
 #include "stddef.h"
 #include "../../window.h"
-#include <stdio.h>
 
 #define MAP_SIZE_X 5
 #define MAP_SIZE_Y 5
@@ -47,7 +46,7 @@ Npc *npcTab;
 bool isFacingNpc = false;
 Npc facingNpc;
 
-int init_dungeon(window *w) {
+void init_dungeon(window *w) {
   camera.position = (Vector3){0.0f, 2.0f, 0.0f}; // Camera position
   camera.target = (Vector3){0.0f, 2.0f, 1.0f};   // Camera looking at point
   camera.up =

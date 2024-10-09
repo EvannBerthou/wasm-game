@@ -1,6 +1,5 @@
 #include "npc.h"
 #include "stdlib.h"
-#include "raylib.h"
 #include "stdio.h"
 #include "string.h"
 
@@ -46,8 +45,8 @@ Npc* npcInitiate(){
 void dialogueParser(Npc *npc){
     FILE *dialogueFile = fopen("data/dialogue/dialogue.txt","rb"); 
 
-    char* currentLine = malloc(sizeof(*dialogueFile));
-    char* finalLine = malloc(sizeof(*dialogueFile));
+    char* currentLine = malloc(255);
+    char* finalLine = malloc(255);
 
     fgets(currentLine,100,dialogueFile); 
 
