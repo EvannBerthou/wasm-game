@@ -87,8 +87,10 @@ static void kill_top_window() {
       window_active[i] = 0;
       memset(&windows[i], 0, sizeof(window));
       window_count--;
-      window_zbuf[window_count] = -1;
-      windows[window_zbuf[window_count - 1]].focused = true;
+      if (window_count > 0) {
+        window_zbuf[window_count] = -1;
+        windows[window_zbuf[window_count - 1]].focused = true;
+      }
       break;
     }
   }
@@ -123,7 +125,7 @@ void init_desktop() {
 }
 
 void update_desktop(void) {
-  if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_T)) {
+  if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_T)) {
     const char *name = TextFormat("Terminal %d", window_count);
     window terminal = {.pos = {100, 100},
                        .size = {500, 300},
