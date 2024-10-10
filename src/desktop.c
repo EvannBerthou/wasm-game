@@ -9,17 +9,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_WINDOWS_COUNT 16
+#define MAX_WINDOWS_COUNT 1024
+#define DISABLED_WINDOW MAX_WINDOWS_COUNT + 1
 
 window windows[MAX_WINDOWS_COUNT] = {0};
-bool window_active[MAX_WINDOWS_COUNT] = {0};
 int window_zbuf[MAX_WINDOWS_COUNT] = {-1};
 size_t window_count = 0;
 size_t WINDOW_IDS = 0;
 
-static window *get_window_with_id(int id) {
+window *fullscreen_window = NULL;
+Vector2 prefullscreen_size;
+
+static window *get_window_with_id(uint32_t id) {
   for (int i = 0; i < MAX_WINDOWS_COUNT; i++) {
-    if (window_active[i] && windows[i].id == id) {
+    if (windows[i].id == id) {
       return &windows[i];
     }
   }
@@ -36,8 +39,7 @@ static int add_window(window w) {
   }
 
   w.id = WINDOW_IDS;
-  WINDOW_IDS++;
-  w.window_data = NULL;
+  WINDOW_IDS = (WINDOW_IDS + 1) % MAX_WINDOWS_COUNT;
   w.target = LoadRenderTexture(w.size.x, w.size.y);
 
   if (window_count > 0) {
@@ -50,24 +52,24 @@ static int add_window(window w) {
   }
 
   for (int i = 0; i < MAX_WINDOWS_COUNT; i++) {
-    if (window_active[i] == 0) {
-      window_active[i] = 1;
+    if (windows[i].id == DISABLED_WINDOW) {
       windows[i] = w;
       window_zbuf[window_count] = w.id;
       break;
     }
   }
+
   window_count++;
   return window_count;
 }
 
 static void set_top_window(int id) {
-  int i = 0;
-  while (window_zbuf[i] != id) {
-    i++;
-  }
-  for (; i < window_count - 1; i++) {
-    window_zbuf[i] = window_zbuf[i + 1];
+  int c1 = 0;
+  for (size_t i = 0; i < window_count; i++) {
+    if (window_zbuf[i] == id)
+      continue;
+    window_zbuf[c1] = window_zbuf[i];
+    c1++;
   }
   window_zbuf[window_count - 1] = id;
 }
@@ -78,48 +80,66 @@ static void kill_top_window() {
   }
 
   window *w = get_focused_window();
-  if (w->window_data) {
-    free(w->window_data);
+  printf("Killing %s with ID=%u\n", w->title, w->id);
+  if (w == fullscreen_window) {
+    fullscreen_window = NULL;
+    prefullscreen_size = Vector2Zero();
   }
 
-  for (int i = 0; i < MAX_WINDOWS_COUNT; i++) {
-    if (windows[i].id == w->id) {
-      printf("Killing %s with ID=%d\n", w->title, i);
-      window_active[i] = 0;
-      memset(&windows[i], 0, sizeof(window));
-      window_count--;
-      if (window_count > 0) {
-        window_zbuf[window_count] = -1;
-        windows[window_zbuf[window_count - 1]].focused = true;
-      }
-      break;
-    }
+  if (w->window_data != NULL) {
+    free(w->window_data);
+  }
+  w->window_data = NULL;
+
+  UnloadRenderTexture(w->target);
+  w->id = DISABLED_WINDOW;
+
+  window_count--;
+  window_zbuf[window_count] = 0;
+  if (window_count > 0) {
+    set_top_window(window_zbuf[window_count - 1]);
   }
 }
 
 void init_desktop() {
-  add_window(new_terminal(100, 100, 1000, 600, "Terminal"));
-  add_window(new_terminal(400, 200, 300, 300, "Terminal 2"));
-  add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));
-  add_window(new_clock(900, 45, 300, 200, "Clock"));
+  for (int i = 0; i < MAX_WINDOWS_COUNT; i++) {
+    windows[i].id = DISABLED_WINDOW;
+  }
+
+  /*add_window(new_terminal(100, 100, 1000, 600, "Terminal"));*/
+  /*add_window(new_terminal(400, 200, 300, 300, "Terminal 2"));*/
+  /*add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));*/
+  /*add_window(new_clock(900, 45, 300, 200, "Clock"));*/
 }
 
 void update_desktop(void) {
   if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_T)) {
     const char *name = TextFormat("Terminal %d", window_count);
-    window terminal = {.pos = {100, 100},
-                       .size = {500, 300},
-                       .init = init_terminal,
-                       .update = update_terminal,
-                       .render = render_terminal,
-                       Vector2Zero()};
-    // TODO: Cleaner way
-    memcpy(terminal.title, name, strlen(name));
-    add_window(terminal);
+    add_window(new_terminal(100, 100, 1000, 600, name));
   }
 
   if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_C)) {
     kill_top_window();
+  }
+
+  if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_F)) {
+    if (fullscreen_window) {
+      window *w = fullscreen_window;
+      w->size = prefullscreen_size;
+      UnloadRenderTexture(w->target);
+      w->target = LoadRenderTexture(w->size.x, w->size.y);
+
+      fullscreen_window = NULL;
+      prefullscreen_size = Vector2Zero();
+    } else {
+      fullscreen_window = get_focused_window();
+      prefullscreen_size = fullscreen_window->size;
+
+      fullscreen_window->size.x = 1200;
+      fullscreen_window->size.y = 800;
+      UnloadRenderTexture(fullscreen_window->target);
+      fullscreen_window->target = LoadRenderTexture(1200, 800);
+    }
   }
 
   if (IsKeyPressed(KEY_R)) {
@@ -134,14 +154,30 @@ void update_desktop(void) {
     w->target = LoadRenderTexture(w->size.x, w->size.y);
   }
 
-  for (int i = MAX_WINDOWS_COUNT - 1; i >= 0; i--) {
-    if (window_active[i] == 0)
-      continue;
-    int res = update_window(&windows[i]);
-    if (res != -1 && res == windows[i].id) {
-      get_focused_window()->focused = false;
-      set_top_window(res);
-      get_focused_window()->focused = true;
+  if (window_count > 0) {
+    for (int i = window_count - 1; i != 0; i--) {
+      window *w = get_window_with_id(window_zbuf[i]);
+      uint32_t res = update_window(w);
+      if (res != UINT32_MAX) {
+        get_focused_window()->focused = false;
+        set_top_window(res);
+        get_focused_window()->focused = true;
+      }
+    }
+  }
+
+  // TEMP: Testing window creation and destroying
+  static int order = 0;
+  for (int i = 0; i < 3; i++) {
+    if (order == 0) {
+      add_window(new_terminal(GetRandomValue(0, 1200), GetRandomValue(0, 800),
+                              100, 100, "Test"));
+      if (window_count == MAX_WINDOWS_COUNT)
+        order = 1;
+    } else {
+      kill_top_window();
+      if (window_count == 0)
+        order = 0;
     }
   }
 }
@@ -153,13 +189,22 @@ static void render_topbar(void) {
 void render_desktop(void) {
   ClearBackground(RAYWHITE);
   render_topbar();
-  for (int i = 0; i < MAX_WINDOWS_COUNT; i++) {
-    if (window_active[i] == 0)
+
+  for (size_t i = 0; i < window_count; i++) {
+    window *w = get_window_with_id(window_zbuf[i]);
+
+    if (fullscreen_window && w != fullscreen_window)
       continue;
-    window *w = &windows[window_zbuf[i]];
+
     render_window(w);
 
+    Vector2 origin;
+    if (fullscreen_window) {
+      origin = Vector2Zero();
+    } else {
+      origin = w->pos;
+    }
     DrawTextureRec(w->target.texture, (Rectangle){0, 0, w->size.x, -w->size.y},
-                   (Vector2){w->pos.x, w->pos.y}, WHITE);
+                   origin, WHITE);
   }
 }

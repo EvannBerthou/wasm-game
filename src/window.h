@@ -10,7 +10,7 @@
 #define INPADV(v) ((v.x) + DEFAULT_PADDING), ((v.y) + DEFAULT_PADDING)
 
 typedef struct window {
-  uint8_t id;
+  uint32_t id;
   Vector2 pos;
   Vector2 size;
   char title[32];
@@ -27,7 +27,7 @@ typedef struct window {
 } window;
 
 void init_window(window *w, Vector2 pos, Vector2 size, const char *title);
-int update_window(window *w);
+uint32_t update_window(window *w);
 void render_window(window *w);
 
 Rectangle get_window_inner(window *w);

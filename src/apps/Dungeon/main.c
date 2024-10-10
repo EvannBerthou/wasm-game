@@ -56,6 +56,7 @@ window new_dungeon(int posx, int posy, int sizex, int sizey,
 }
 
 void init_dungeon(window *w) {
+  (void)w;
   camera.position = (Vector3){0.0f, 2.0f, 0.0f}; // Camera position
   camera.target = (Vector3){0.0f, 2.0f, 1.0f};   // Camera looking at point
   camera.up =
@@ -79,6 +80,7 @@ void init_dungeon(window *w) {
 }
 
 void update_dungeon(window *w) {
+  (void)w;
   Vector3 nextPosition =
       Vector3Add(Vector3Scale(GetCameraForward(&camera), PLAYER_MOVE_RANGE),
                  camera.position);
@@ -130,6 +132,7 @@ void update_dungeon(window *w) {
 }
 
 void render_dungeon(window *w) {
+  (void)w;
   ClearBackground(RAYWHITE);
 
   BeginMode3D(camera);
