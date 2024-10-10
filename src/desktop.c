@@ -1,8 +1,8 @@
-#include "Dungeon/src/main.h"
-#include "clock.h"
+#include "apps/Dungeon/main.h"
+#include "apps/clock/main.h"
+#include "apps/terminal/main.h"
 #include "raylib.h"
 #include "raymath.h"
-#include "terminal.h"
 #include "window.h"
 #include <assert.h>
 #include <stdio.h>
@@ -98,39 +98,10 @@ static void kill_top_window() {
 }
 
 void init_desktop() {
-  window terminal1 = {.pos = {100, 100},
-                      .size = {1000, 600},
-                      .title = "Terminal",
-                      .init = init_terminal,
-                      .update = update_terminal,
-                      .render = render_terminal,
-                      Vector2Zero()};
-  add_window(terminal1);
-
-  window terminal2 = {.pos = {400, 200},
-                      .size = {300, 300},
-                      .title = "Terminal 2",
-                      .init = init_terminal,
-                      .update = update_terminal,
-                      .render = render_terminal,
-                      Vector2Zero()};
-  add_window(terminal2);
-
-  window clock = {.pos = {900, 45},
-                  .size = {300, 200},
-                  .title = "Clock",
-                  .update = NULL,
-                  .render = render_clock,
-                  Vector2Zero()};
-  add_window(clock);
-
-  window dungeon = {.pos = {100, 100},
-                    .size = {960, 540},
-                    .title = "Dungeon",
-                    .init = init_dungeon,
-                    .update = update_dungeon,
-                    .render = render_dungeon};
-  add_window(dungeon);
+  add_window(new_terminal(100, 100, 1000, 600, "Terminal"));
+  add_window(new_terminal(400, 200, 300, 300, "Terminal 2"));
+  add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));
+  add_window(new_clock(900, 45, 300, 200, "Clock"));
 }
 
 void update_desktop(void) {

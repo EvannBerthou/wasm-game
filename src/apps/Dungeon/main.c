@@ -1,10 +1,11 @@
+#include "main.h"
 #include "npc.h"
 #include "player_control.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "rcamera.h"
 #include "stddef.h"
-#include "../../window.h"
+#include "window.h"
 
 #define MAP_SIZE_X 5
 #define MAP_SIZE_Y 5
@@ -45,6 +46,14 @@ int npcNumber = 2;
 Npc *npcTab;
 bool isFacingNpc = false;
 Npc facingNpc;
+
+window new_dungeon(int posx, int posy, int sizex, int sizey,
+                   const char *title) {
+  window w = {
+      .init = init_dungeon, .update = update_dungeon, .render = render_dungeon};
+  init_window(&w, (Vector2){posx, posy}, (Vector2){sizex, sizey}, title);
+  return w;
+}
 
 void init_dungeon(window *w) {
   camera.position = (Vector3){0.0f, 2.0f, 0.0f}; // Camera position

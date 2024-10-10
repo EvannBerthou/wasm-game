@@ -1,6 +1,13 @@
+#include "main.h"
 #include "raylib.h"
 #include "window.h"
 #include <time.h>
+
+window new_clock(int posx, int posy, int sizex, int sizey, const char *title) {
+  window w = {.render = render_clock};
+  init_window(&w, (Vector2){posx, posy}, (Vector2){sizex, sizey}, title);
+  return w;
+}
 
 void render_clock(window *w) {
   time_t t = time(NULL);

@@ -14,6 +14,8 @@ typedef struct terminal_data {
     size_t input_length;
 } terminal_data;
 
+window new_terminal(int posx, int posy, int sizex, int sizey,
+                    const char *title);
 void init_terminal(window *w);
 void update_terminal(window *w);
 void render_terminal(window *w);

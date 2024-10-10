@@ -1,17 +1,26 @@
-#include "terminal.h"
+#include "main.h"
+#include "../../utils.h"
 #include "raylib.h"
-#include "utils.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+window new_terminal(int posx, int posy, int sizex, int sizey,
+                    const char *title) {
+  window w = {.init = init_terminal,
+              .update = update_terminal,
+              .render = render_terminal};
+  init_window(&w, (Vector2){posx, posy}, (Vector2){sizex, sizey}, title);
+  w.window_data = malloc(sizeof(terminal_data));
+  return w;
+}
+
 void init_terminal(window *w) {
-  terminal_data *data = malloc(sizeof(terminal_data));
+  terminal_data *data = (terminal_data *)w->window_data;
   memset(data->input, 0, MAX_INPUT_LENGTH * MAX_INPUT_LINES);
   data->input_length = 0;
   data->input_count = 0;
-  w->window_data = data;
 }
 
 void update_terminal(window *w) {
@@ -56,8 +65,7 @@ void render_terminal(window *w) {
   // Render Cursor
   DrawRectangleV(end_position, (Vector2){5, 18}, WHITE);
 
-
-  //Debug rendering
+  // Debug rendering
   DrawCircle(w->size.x - 10, w->size.y - 10, 10, BLUE);
 }
 

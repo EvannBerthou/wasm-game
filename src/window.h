@@ -26,6 +26,7 @@ typedef struct window {
   RenderTexture target;
 } window;
 
+void init_window(window *w, Vector2 pos, Vector2 size, const char *title);
 int update_window(window *w);
 void render_window(window *w);
 

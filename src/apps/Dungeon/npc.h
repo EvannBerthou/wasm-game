@@ -1,7 +1,7 @@
 #ifndef NPC_H
 #define NPC_H
 
-#include "../../raylib.h"
+#include "raylib.h"
 
 typedef struct node{
 	struct node *next;
