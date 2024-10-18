@@ -62,3 +62,8 @@ void render_window(window *w) {
     EndTextureMode();
   }
 }
+
+
+void disable_dragging() {
+    dragging = UINT32_MAX;
+}

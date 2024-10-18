@@ -29,7 +29,6 @@ typedef struct window {
 void init_window(window *w, Vector2 pos, Vector2 size, const char *title);
 uint32_t update_window(window *w);
 void render_window(window *w);
-
-Rectangle get_window_inner(window *w);
+void disable_dragging();
 
 #endif

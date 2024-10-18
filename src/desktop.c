@@ -9,11 +9,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_WINDOWS_COUNT 1024
-#define DISABLED_WINDOW MAX_WINDOWS_COUNT + 1
+#define MAX_WINDOWS_COUNT 128
+#define DISABLED_WINDOW UINT32_MAX
 
 window windows[MAX_WINDOWS_COUNT] = {0};
-int window_zbuf[MAX_WINDOWS_COUNT] = {-1};
+uint32_t window_zbuf[MAX_WINDOWS_COUNT] = {-1};
 size_t window_count = 0;
 size_t WINDOW_IDS = 0;
 
@@ -21,7 +21,8 @@ window *fullscreen_window = NULL;
 Vector2 prefullscreen_size;
 
 static window *get_window_with_id(uint32_t id) {
-  for (int i = 0; i < MAX_WINDOWS_COUNT; i++) {
+  assert(id < DISABLED_WINDOW);
+  for (uint32_t i = 0; i < MAX_WINDOWS_COUNT; i++) {
     if (windows[i].id == id) {
       return &windows[i];
     }
@@ -39,7 +40,7 @@ static int add_window(window w) {
   }
 
   w.id = WINDOW_IDS;
-  WINDOW_IDS = (WINDOW_IDS + 1) % MAX_WINDOWS_COUNT;
+  WINDOW_IDS = (WINDOW_IDS + 1) % UINT32_MAX;
   w.target = LoadRenderTexture(w.size.x, w.size.y);
 
   if (window_count > 0) {
@@ -63,7 +64,7 @@ static int add_window(window w) {
   return window_count;
 }
 
-static void set_top_window(int id) {
+static void set_top_window(uint32_t id) {
   int c1 = 0;
   for (size_t i = 0; i < window_count; i++) {
     if (window_zbuf[i] == id)
@@ -91,6 +92,7 @@ static void kill_top_window() {
   }
   w->window_data = NULL;
 
+  disable_dragging();
   UnloadRenderTexture(w->target);
   w->id = DISABLED_WINDOW;
 
@@ -106,15 +108,16 @@ void init_desktop() {
     windows[i].id = DISABLED_WINDOW;
   }
 
-  /*add_window(new_terminal(100, 100, 1000, 600, "Terminal"));*/
-  /*add_window(new_terminal(400, 200, 300, 300, "Terminal 2"));*/
-  /*add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));*/
-  /*add_window(new_clock(900, 45, 300, 200, "Clock"));*/
+  add_window(new_terminal(100, 100, 1000, 600, "Terminal"));
+  add_window(new_terminal(400, 200, 300, 300, "Terminal 2"));
+  add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));
+  add_window(new_dungeon(200, 100, 960, 540, "Dungeon"));
+  add_window(new_clock(900, 45, 300, 200, "Clock"));
 }
 
 void update_desktop(void) {
   if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_T)) {
-    const char *name = TextFormat("Terminal %d", window_count);
+    const char *name = TextFormat("Terminal %d", WINDOW_IDS);
     add_window(new_terminal(100, 100, 1000, 600, name));
   }
 
@@ -155,29 +158,14 @@ void update_desktop(void) {
   }
 
   if (window_count > 0) {
-    for (int i = window_count - 1; i != 0; i--) {
-      window *w = get_window_with_id(window_zbuf[i]);
+    for (int i = window_count; i != 0; i--) {
+      window *w = get_window_with_id(window_zbuf[i - 1]);
       uint32_t res = update_window(w);
       if (res != UINT32_MAX) {
         get_focused_window()->focused = false;
         set_top_window(res);
         get_focused_window()->focused = true;
       }
-    }
-  }
-
-  // TEMP: Testing window creation and destroying
-  static int order = 0;
-  for (int i = 0; i < 3; i++) {
-    if (order == 0) {
-      add_window(new_terminal(GetRandomValue(0, 1200), GetRandomValue(0, 800),
-                              100, 100, "Test"));
-      if (window_count == MAX_WINDOWS_COUNT)
-        order = 1;
-    } else {
-      kill_top_window();
-      if (window_count == 0)
-        order = 0;
     }
   }
 }
