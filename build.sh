@@ -2,5 +2,11 @@
 
 set -xe
 
-#emcc -o index.html $(find -type f -name "*.c") -Os -Wall libraylib.a -I../raylib/src -Isrc -L./libraylib.a -s USE_GLFW=3 --shell-file shell.html -DPLATFORM_WEB --preload-file img --preload-file data
-cc -o game $(find -type f -name "*.c") -Wall -Wextra -Werror -Isrc -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -DPLATFORM_DESKTOP -g
+CFLAGS='-Wall -Wextra -Werror'
+INCLUDES='-Isrc -isystem lib/include'
+LIBS='-lm'
+
+
+emcc -o index.html $(find -type f -name "*.c") -Os -L./lib/web -l:libraylib.a $CFLAGS $INCLUDES -s USE_GLFW=3 --shell-file shell.html -DPLATFORM_WEB --preload-file img --preload-file data
+
+gcc -o game $(find -type f -name "*.c") $CFLAGS $INCLUDES -L./lib/linux -l:libraylib.a $LIBS -DPLATFORM_DESKTOP -g
