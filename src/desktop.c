@@ -1,11 +1,10 @@
-/*TODO: Configurer clangd pour qu'il ignore ce fichier */
-#define RAYLIB_NUKLEAR_IMPLEMENTATION
-#include "raylib-nuklear.h"
 #include "apps/Dungeon/main.h"
 #include "apps/clock/main.h"
 #include "apps/terminal/main.h"
 #include "raylib.h"
 #include "raymath.h"
+#include "ui/button.h"
+#include "ui/context.h"
 #include "window.h"
 #include <assert.h>
 #include <stdio.h>
@@ -22,7 +21,7 @@ size_t WINDOW_IDS = 0;
 
 window *fullscreen_window = NULL;
 Vector2 prefullscreen_size;
-struct nk_context *ctx = NULL;
+ui_context ctx;
 
 static window *get_window_with_id(uint32_t id) {
   assert(id < DISABLED_WINDOW);
@@ -112,17 +111,17 @@ void init_desktop() {
     windows[i].id = DISABLED_WINDOW;
   }
 
-  add_window(new_terminal(100, 100, 1000, 600, "Terminal"));
-  add_window(new_terminal(400, 200, 300, 300, "Terminal 2"));
-  add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));
-  add_window(new_dungeon(200, 100, 960, 540, "Dungeon"));
   add_window(new_clock(900, 45, 300, 200, "Clock"));
+  /*add_window(new_terminal(100, 100, 1000, 600, "Terminal"));*/
+  /*add_window(new_terminal(400, 200, 300, 300, "Terminal 2"));*/
+  /*add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));*/
+  add_window(new_dungeon(50, 100, 960, 540, "Dungeon"));
 
-  ctx = InitNuklear(10);
+  init_ui_context(&ctx);
 }
 
 void update_desktop(void) {
-  UpdateNuklear(ctx);
+  update_ui_context(&ctx);
 
   if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_T)) {
     const char *name = TextFormat("Terminal %d", WINDOW_IDS);
@@ -168,7 +167,7 @@ void update_desktop(void) {
   if (window_count > 0) {
     for (int i = window_count; i != 0; i--) {
       window *w = get_window_with_id(window_zbuf[i - 1]);
-      uint32_t res = update_window(w);
+      uint32_t res = update_window(w, &ctx);
       if (res != UINT32_MAX) {
         get_focused_window()->focused = false;
         set_top_window(res);
@@ -177,14 +176,10 @@ void update_desktop(void) {
     }
   }
 
-  if (nk_begin(ctx, "Nuklear", nk_rect(100, 100, 220, 220),
-               NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_CLOSABLE)) {
-    nk_layout_row_static(ctx, 50, 150, 1);
-    if (nk_button_label(ctx, "Button")) {
-        printf("HELLO\n");
-    }
+  if (ui_button_label(&ctx, (Rectangle){150, 150, 100, 30}, "static button", RED, GREEN,
+                      LIGHTGRAY)) {
+    printf("CLICKED\n");
   }
-  nk_end(ctx);
 }
 
 static void render_topbar(void) {
@@ -192,7 +187,7 @@ static void render_topbar(void) {
 }
 
 void render_desktop(void) {
-  ClearBackground(RAYWHITE);
+  ClearBackground(GetColor(0x0C0002FF));
   render_topbar();
 
   for (size_t i = 0; i < window_count; i++) {
@@ -213,5 +208,5 @@ void render_desktop(void) {
                    origin, WHITE);
   }
 
-  DrawNuklear(ctx);
+  render_ui_context(&ctx);
 }

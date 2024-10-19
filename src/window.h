@@ -2,6 +2,7 @@
 #define WINDOW_H
 
 #include "raylib.h"
+#include "ui/context.h"
 #include <stdint.h>
 
 #define DEFAULT_PADDING 5.f
@@ -27,7 +28,7 @@ typedef struct window {
 } window;
 
 void init_window(window *w, Vector2 pos, Vector2 size, const char *title);
-uint32_t update_window(window *w);
+uint32_t update_window(window *w, ui_context *ui);
 void render_window(window *w);
 void disable_dragging();
 

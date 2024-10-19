@@ -1,8 +1,13 @@
 #include "main.h"
 #include "desktop.h"
 #include "raylib.h"
+#include "utils.h"
 
-void init(void) { init_desktop(); }
+void init(void) {
+  Font loaded_font = GetFontDefault();
+  SetDefaultFont(loaded_font);
+  init_desktop();
+}
 
 void main_loop(void) {
   // Updating
