@@ -8,7 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-static bool ui_button_behavior(ui_button *button) {
+#define DOUBLE_CLICK_TIMING 0.250f
+
+static bool ui_button_behavior(ui_context *ui, ui_button *button) {
   ui_element *element = &button->element;
   Rectangle *rec = &element->rec;
   Vector2 text_size = MeasureTextEx(GetDefaultFont(), button->label, 16, 1);
@@ -30,8 +32,18 @@ static bool ui_button_behavior(ui_button *button) {
       element->state = UI_CLICKED;
     }
 
-    // Only trigger clicked event once
-    if (IsMouseButtonPressed(0)) {
+    bool was_in_on_pressed = CheckCollisionPointRec(ui->down_at, element->rec);
+    if (was_in_on_pressed && IsMouseButtonReleased(0)) {
+      if (button->button_type & UI_BUTTON_DOUBLE_CLICK) {
+        double current_time = GetTime();
+        double delta = current_time - *button->clicked_at;
+        if (delta > DOUBLE_CLICK_TIMING) {
+          *button->clicked_at = current_time;
+          return false;
+        }
+        return true;
+      }
+
       return true;
     }
   }
@@ -39,8 +51,9 @@ static bool ui_button_behavior(ui_button *button) {
   return false;
 }
 
-bool ui_button_label_styled(ui_context *ui, Rectangle position,
-                            const char *label, ui_text_styling styling) {
+bool ui_button_all(ui_context *ui, Rectangle position, const char *label,
+                   ui_text_styling styling, ui_button_type type,
+                   Texture2D *image, double *clicked_at) {
   ui_button *button = malloc(sizeof(ui_button));
   ui_element *element = &button->element;
   element->type = UI_BUTTON;
@@ -48,33 +61,40 @@ bool ui_button_label_styled(ui_context *ui, Rectangle position,
   element->prev = NULL;
   element->state = UI_NORMAL;
 
-  button->label = strdup(label);
+  button->label = label ? strdup(label) : NULL;
   button->text_styling = styling;
-  button->button_type = UI_BUTTON_LABEL | UI_BUTTON_COLOR;
+  button->button_type = type;
+  button->image = image != NULL ? (*image) : (Texture2D){0};
+  button->clicked_at = clicked_at;
 
   ui_add_element(ui, element);
 
-  return ui_button_behavior(button);
+  return ui_button_behavior(ui, button);
+}
+
+bool ui_button_label_styled(ui_context *ui, Rectangle position,
+                            const char *label, ui_text_styling styling) {
+  return ui_button_all(ui, position, label, styling,
+                       UI_BUTTON_LABEL | UI_BUTTON_COLOR, NULL, 0);
 }
 
 bool ui_button_image_with_label(ui_context *ui, Rectangle position,
                                 const char *label, Texture2D image) {
-  ui_button *button = malloc(sizeof(ui_button));
-  ui_element *element = &button->element;
-  element->type = UI_BUTTON;
-  element->rec = position;
-  element->prev = NULL;
-  element->state = UI_NORMAL;
+  ui_text_styling styling = TEXT_STYLING_UNDER | TEXT_STYLING_INVERT_COLOR |
+                            TEXT_STYLING_CENTER_HORIZONTAL;
+  ui_button_type button_type = UI_BUTTON_LABEL | UI_BUTTON_IMAGE;
+  return ui_button_all(ui, position, label, styling, button_type, &image, 0);
+}
 
-  button->label = strdup(label);
-  button->text_styling = TEXT_STYLING_UNDER | TEXT_STYLING_INVERT_COLOR |
-                         TEXT_STYLING_CENTER_HORIZONTAL;
-  button->button_type = UI_BUTTON_LABEL | UI_BUTTON_IMAGE;
-  button->image = image;
-
-  ui_add_element(ui, element);
-
-  return ui_button_behavior(button);
+bool ui_button_double_image_with_label(ui_context *ui, Rectangle position,
+                                       const char *label, Texture2D image,
+                                       double *clicked_at) {
+  ui_text_styling styling = TEXT_STYLING_UNDER | TEXT_STYLING_INVERT_COLOR |
+                            TEXT_STYLING_CENTER_HORIZONTAL;
+  ui_button_type button_type =
+      UI_BUTTON_LABEL | UI_BUTTON_IMAGE | UI_BUTTON_DOUBLE_CLICK;
+  return ui_button_all(ui, position, label, styling, button_type, &image,
+                       clicked_at);
 }
 
 bool ui_button_label(ui_context *ui, Rectangle position, const char *label) {

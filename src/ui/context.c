@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include "ui/button.h"
 #include <assert.h>
+#include <raymath.h>
 #include <stdlib.h>
 
 void init_ui_context(ui_context *ui) {
@@ -12,6 +13,15 @@ void init_ui_context(ui_context *ui) {
   head_sentinel->prev = head_sentinel;
   ui->head = head_sentinel;
   ui->last = ui->head;
+
+  ui->prev_mouse = Vector2Zero();
+}
+
+void update_ui_context(ui_context *ui) {
+  ui->prev_mouse = GetMousePosition();
+  if (IsMouseButtonPressed(0)) {
+      ui->down_at = GetMousePosition();
+  }
 }
 
 void render_ui_context(ui_context *ui) {

@@ -30,6 +30,7 @@ typedef struct desktop_icon {
   Rectangle rec;
   Texture2D icon;
   const char *name;
+  double clicked_at;
 } desktop_icon;
 
 desktop_icon icons[16] = {0};
@@ -168,7 +169,8 @@ void init_desktop() {
 
     icons[0] = (desktop_icon){.rec = (Rectangle){5, 45, 60, 60},
                               .icon = LoadTextureFromImage(dungeon_icon),
-                              .name = "Dungeon"};
+                              .name = "Dungeon",
+                              .clicked_at = 0};
   }
   {
     Image terminal_icon = LoadImage("img/terminal.png");
@@ -176,7 +178,8 @@ void init_desktop() {
 
     icons[1] = (desktop_icon){.rec = (Rectangle){5, 130, 60, 60},
                               .icon = LoadTextureFromImage(terminal_icon),
-                              .name = "Terminal"};
+                              .name = "Terminal",
+                              .clicked_at = 0};
   }
   {
     Image terminal_icon = LoadImage("img/Jelly.png");
@@ -184,28 +187,38 @@ void init_desktop() {
 
     icons[2] = (desktop_icon){.rec = (Rectangle){5, 215, 60, 60},
                               .icon = LoadTextureFromImage(terminal_icon),
-                              .name = "Clock"};
+                              .name = "Clock",
+                              .clicked_at = 0};
   }
 }
 
 static void desktop_apps_ui() {
+
   desktop_icon *ic = &icons[0];
-  if (ui_button_image_with_label(&desktop_ui, ic->rec, ic->name, ic->icon)) {
+
+  if (ui_button_double_image_with_label(&desktop_ui, ic->rec, ic->name,
+
+                                        ic->icon, &ic->clicked_at)) {
     add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));
   }
 
   ic = &icons[1];
-  if (ui_button_image_with_label(&desktop_ui, ic->rec, ic->name, ic->icon)) {
+
+  if (ui_button_double_image_with_label(&desktop_ui, ic->rec, ic->name,
+                                        ic->icon, &ic->clicked_at)) {
     add_window(new_terminal(400, 200, 300, 300, "Terminal 2"));
   }
 
   ic = &icons[2];
-  if (ui_button_image_with_label(&desktop_ui, ic->rec, ic->name, ic->icon)) {
+  if (ui_button_double_image_with_label(&desktop_ui, ic->rec, ic->name,
+                                        ic->icon, &ic->clicked_at)) {
     add_window(new_clock(940, 70, 250, 100, "Clock"));
   }
 }
 
 void update_desktop(void) {
+  update_ui_context(&desktop_ui);
+  update_ui_context(&global_ui);
   desktop_apps_ui();
 
   if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_T)) {
@@ -217,7 +230,7 @@ void update_desktop(void) {
     kill_top_window();
   }
 
-  if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_F)) {
+  if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_F)) {
     toggle_fullscreen_window(get_focused_window());
   }
 
@@ -238,6 +251,7 @@ void update_desktop(void) {
 
   if (window_count > 0) {
     for (int i = window_count; i != 0; i--) {
+      update_ui_context(&window_ui[i - 1]);
       window *w = get_window_with_id(window_zbuf[i - 1]);
       window_update_action res = update_window(w, &window_ui[i - 1]);
       if (recieved_action == ACTION_NONE && res != ACTION_NONE) {

@@ -21,7 +21,8 @@ static Rectangle get_border(window *w) {
 static Rectangle get_header(window *w) {
   return (Rectangle){w->pos.x - paddings.x + DEFAULT_PADDING,
                      w->pos.y - paddings.y + DEFAULT_PADDING,
-                     w->size.x + paddings.x + paddings.z - DEFAULT_PADDING,
+                     // Skipping some space for action buttons
+                     w->size.x + paddings.x + paddings.z - DEFAULT_PADDING - 50,
                      paddings.y + paddings.w - DEFAULT_PADDING * 2 - 2};
 }
 
@@ -60,18 +61,18 @@ window_update_action update_window(window *w, ui_context *ui) {
   // don't, we will draw the UI at a previous window position
   header = get_header(w);
   const int BUTTON_SIZE = 20;
-  Rectangle close_rec = {header.x + header.width - DEFAULT_PADDING -
-                             BUTTON_SIZE,
+
+  Rectangle fullscreen_rec = {header.x + header.width, header.y, BUTTON_SIZE,
+                              BUTTON_SIZE};
+  if (ui_button_label(ui, fullscreen_rec, "O")) {
+    return ACTION_FULLSCREEN;
+  }
+
+  Rectangle close_rec = {header.x + header.width + BUTTON_SIZE +
+                             DEFAULT_PADDING,
                          header.y, BUTTON_SIZE, BUTTON_SIZE};
   if (ui_button_label(ui, close_rec, "X")) {
     return ACTION_KILL;
-  }
-
-  Rectangle fullscreen_rec = {header.x + header.width -
-                                  (DEFAULT_PADDING + BUTTON_SIZE) * 2,
-                              header.y, BUTTON_SIZE, BUTTON_SIZE};
-  if (ui_button_label(ui, fullscreen_rec, "O")) {
-    return ACTION_FULLSCREEN;
   }
 
   if (dragging == UINT32_MAX) {
