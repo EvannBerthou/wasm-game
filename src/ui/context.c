@@ -14,8 +14,6 @@ void init_ui_context(ui_context *ui) {
   ui->last = ui->head;
 }
 
-void update_ui_context(ui_context *ui) { (void)ui; }
-
 void render_ui_context(ui_context *ui) {
   while (ui->last != ui->head) {
     switch (ui->last->type) {

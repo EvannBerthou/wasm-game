@@ -14,6 +14,7 @@
 #define MAX_WINDOWS_COUNT 128
 #define DISABLED_WINDOW UINT32_MAX
 
+// TODO: Have a desktop struct ?
 window windows[MAX_WINDOWS_COUNT] = {0};
 ui_context window_ui[MAX_WINDOWS_COUNT] = {0};
 uint32_t window_zbuf[MAX_WINDOWS_COUNT] = {-1};
@@ -22,7 +23,17 @@ size_t WINDOW_IDS = 0;
 
 window *fullscreen_window = NULL;
 Vector2 prefullscreen_size;
-ui_context ctx;
+ui_context global_ui;
+ui_context desktop_ui;
+
+typedef struct desktop_icon {
+  Rectangle rec;
+  Texture2D icon;
+  const char *name;
+} desktop_icon;
+
+desktop_icon icons[16] = {0};
+size_t icons_count = 0;
 
 static window *get_window_with_id(uint32_t id) {
   assert(id < DISABLED_WINDOW);
@@ -139,17 +150,63 @@ void init_desktop() {
     init_ui_context(&window_ui[i]);
   }
 
-  add_window(new_clock(940, 70, 250, 100, "Clock"));
+  /*add_window(new_clock(940, 70, 250, 100, "Clock"));*/
   /*add_window(new_terminal(100, 100, 1000, 600, "Terminal"));*/
   /*add_window(new_terminal(400, 200, 300, 300, "Terminal 2"));*/
   /*add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));*/
   /*add_window(new_dungeon(50, 100, 960, 540, "Dungeon"));*/
 
-  init_ui_context(&ctx);
+  init_ui_context(&global_ui);
+  init_ui_context(&desktop_ui);
+
+  // TODO: Better system, not safe at all!!!!
+  icons_count = 3;
+
+  {
+    Image dungeon_icon = LoadImage("img/Monoko.png");
+    ImageResize(&dungeon_icon, 60, 60);
+
+    icons[0] = (desktop_icon){.rec = (Rectangle){5, 45, 60, 60},
+                              .icon = LoadTextureFromImage(dungeon_icon),
+                              .name = "Dungeon"};
+  }
+  {
+    Image terminal_icon = LoadImage("img/terminal.png");
+    ImageResize(&terminal_icon, 60, 60);
+
+    icons[1] = (desktop_icon){.rec = (Rectangle){5, 130, 60, 60},
+                              .icon = LoadTextureFromImage(terminal_icon),
+                              .name = "Terminal"};
+  }
+  {
+    Image terminal_icon = LoadImage("img/Jelly.png");
+    ImageResize(&terminal_icon, 60, 60);
+
+    icons[2] = (desktop_icon){.rec = (Rectangle){5, 215, 60, 60},
+                              .icon = LoadTextureFromImage(terminal_icon),
+                              .name = "Clock"};
+  }
+}
+
+static void desktop_apps_ui() {
+  desktop_icon *ic = &icons[0];
+  if (ui_button_image_with_label(&desktop_ui, ic->rec, ic->name, ic->icon)) {
+    add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));
+  }
+
+  ic = &icons[1];
+  if (ui_button_image_with_label(&desktop_ui, ic->rec, ic->name, ic->icon)) {
+    add_window(new_terminal(400, 200, 300, 300, "Terminal 2"));
+  }
+
+  ic = &icons[2];
+  if (ui_button_image_with_label(&desktop_ui, ic->rec, ic->name, ic->icon)) {
+    add_window(new_clock(940, 70, 250, 100, "Clock"));
+  }
 }
 
 void update_desktop(void) {
-  update_ui_context(&ctx);
+  desktop_apps_ui();
 
   if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_T)) {
     const char *name = TextFormat("Terminal %d", WINDOW_IDS);
@@ -205,15 +262,6 @@ void update_desktop(void) {
       break;
     }
   }
-
-  if (ui_button_label_fit(&ctx, (Vector2){5, 40}, "New terminal")) {
-    const char *name = TextFormat("Terminal %d", WINDOW_IDS);
-    add_window(new_terminal(100, 100, 1000, 600, name));
-  }
-
-  if (ui_button_label_fit(&ctx, (Vector2){5, 75}, "New Dungeon")) {
-    add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));
-  }
 }
 
 static void render_topbar(void) {
@@ -223,6 +271,8 @@ static void render_topbar(void) {
 void render_desktop(void) {
   ClearBackground(GetColor(0x0C0002FF));
   render_topbar();
+
+  render_ui_context(&desktop_ui);
 
   for (size_t i = 0; i < window_count; i++) {
     window *w = get_window_with_id(window_zbuf[i]);
@@ -243,5 +293,5 @@ void render_desktop(void) {
     render_ui_context(&window_ui[i]);
   }
 
-  render_ui_context(&ctx);
+  render_ui_context(&global_ui);
 }

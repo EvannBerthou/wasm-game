@@ -27,7 +27,6 @@ typedef struct ui_context {
 } ui_context;
 
 void init_ui_context(ui_context *ui);
-void update_ui_context(ui_context *ui);
 void render_ui_context(ui_context *ui);
 void free_ui_context(ui_context *ui);
 
