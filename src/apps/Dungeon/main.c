@@ -25,7 +25,6 @@ window new_dungeon(int posx, int posy, int sizex, int sizey,
 
 void init_dungeon(window *w) {
   dungeon_data *data = (dungeon_data *)w->window_data;
-  printf("%p\n", data);
   data->gameState = IN_GAME;
   data->animState = NONE;
   data->timeTurnAnim = turnDuration;

@@ -139,11 +139,11 @@ void init_desktop() {
     init_ui_context(&window_ui[i]);
   }
 
-  add_window(new_clock(900, 45, 300, 200, "Clock"));
-  add_window(new_terminal(100, 100, 1000, 600, "Terminal"));
-  add_window(new_terminal(400, 200, 300, 300, "Terminal 2"));
-  add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));
-  add_window(new_dungeon(50, 100, 960, 540, "Dungeon"));
+  add_window(new_clock(940, 70, 250, 100, "Clock"));
+  /*add_window(new_terminal(100, 100, 1000, 600, "Terminal"));*/
+  /*add_window(new_terminal(400, 200, 300, 300, "Terminal 2"));*/
+  /*add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));*/
+  /*add_window(new_dungeon(50, 100, 960, 540, "Dungeon"));*/
 
   init_ui_context(&ctx);
 }
@@ -206,8 +206,13 @@ void update_desktop(void) {
     }
   }
 
-  if (ui_button_label(&ctx, (Rectangle){150, 150, 100, 30}, "static button")) {
-    printf("CLICKED\n");
+  if (ui_button_label_fit(&ctx, (Vector2){5, 40}, "New terminal")) {
+    const char *name = TextFormat("Terminal %d", WINDOW_IDS);
+    add_window(new_terminal(100, 100, 1000, 600, name));
+  }
+
+  if (ui_button_label_fit(&ctx, (Vector2){5, 75}, "New Dungeon")) {
+    add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));
   }
 }
 

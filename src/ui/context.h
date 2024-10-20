@@ -1,8 +1,7 @@
 #ifndef UI_CONTEXT_H
 #define UI_CONTEXT_H
 
-#include <raylib.h>
-#include <stdio.h>
+#include "raylib.h"
 
 typedef enum UI_TYPE {
   UI_NONE,
@@ -10,18 +9,16 @@ typedef enum UI_TYPE {
 } UI_TYPE;
 
 typedef enum ui_element_state {
-    UI_NORMAL,
-    UI_HOVER,
-    UI_CLICKED,
+  UI_NORMAL,
+  UI_HOVER,
+  UI_CLICKED,
 } ui_element_state;
 
 typedef struct ui_element {
   UI_TYPE type;
   Rectangle rec;
-  void *ui_data;
   struct ui_element *prev;
   ui_element_state state;
-  size_t zindex;
 } ui_element;
 
 typedef struct ui_context {

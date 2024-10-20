@@ -1,29 +1,36 @@
 #include "button.h"
 #include "context.h"
+#include "raylib.h"
 #include "ui/style.h"
 #include "utils.h"
-#include <raylib.h>
 #include <stdlib.h>
 #include <string.h>
 
 bool ui_button_label_styled(ui_context *ui, Rectangle position,
-                            const char *label, Color bg_color, Color text_color,
-                            Color hover_color, Color clicked_color) {
-  ui_element *element = malloc(sizeof(ui_element));
+                            const char *label, ui_text_styling styling) {
+  ui_button *button = malloc(sizeof(ui_button));
+  ui_element *element = &button->element;
   element->type = UI_BUTTON;
   element->rec = position;
   element->prev = NULL;
   element->state = UI_NORMAL;
 
-  ui_button_data *data = malloc(sizeof(ui_button_data));
-  data->label = strdup(label);
-  data->bg_color = bg_color;
-  data->text_color = text_color;
-  data->hover_color = hover_color;
-  data->clicked_color = clicked_color;
-  element->ui_data = data;
+  button->label = strdup(label);
+  button->text_styling = styling;
 
   ui_add_element(ui, element);
+
+  Rectangle *rec = &element->rec;
+  Vector2 text_size = MeasureTextEx(GetDefaultFont(), button->label, 16, 1);
+  if (button->text_styling & TEXT_STYLING_FIT) {
+    if (text_size.x + DEFAULT_UI_PADDING * 2 > rec->width) {
+      rec->width = text_size.x + DEFAULT_UI_PADDING * 2;
+    }
+
+    if (text_size.y + DEFAULT_UI_PADDING * 2 > rec->height) {
+      rec->height = text_size.y + DEFAULT_UI_PADDING * 2;
+    }
+  }
 
   if (CheckCollisionPointRec(GetMousePosition(), element->rec)) {
     element->state = UI_HOVER;
@@ -42,31 +49,46 @@ bool ui_button_label_styled(ui_context *ui, Rectangle position,
 }
 
 bool ui_button_label(ui_context *ui, Rectangle position, const char *label) {
-  return ui_button_label_styled(ui, position, label, BG_COLOR, TEXT_COLOR,
-                                HOVER_COLOR, CLICKED_COLOR);
+  return ui_button_label_styled(ui, position, label, TEXT_STYLING_CENTER);
 }
 
-void ui_button_render(ui_element *element) {
-  ui_button_data *data = (ui_button_data *)element->ui_data;
+bool ui_button_label_fit(ui_context *ui, Vector2 position, const char *label) {
+  // Width and height will be set by ui_button_label in order to fit text
+  Rectangle rec = {.x = position.x, .y = position.y, .width = 0, .height = 0};
+  return ui_button_label_styled(ui, rec, label,
+                                TEXT_STYLING_CENTER | TEXT_STYLING_FIT);
+}
 
-  Color c;
-  switch (element->state) {
+void ui_button_render(ui_button *button) {
+  Color bg_color;
+  switch (button->element.state) {
   case UI_NORMAL:
-    c = data->bg_color;
+    bg_color = ui_default_colors[UI_COLOR_NORMAL];
     break;
   case UI_HOVER:
-    c = data->hover_color;
+    bg_color = ui_default_colors[UI_COLOR_HOVER];
     break;
   case UI_CLICKED:
-    c = data->clicked_color;
+    bg_color = ui_default_colors[UI_COLOR_CLICKED];
     break;
   }
 
-  DrawRectangleRec(element->rec, c);
-  DrawRectangleLinesEx(element->rec, 2, data->text_color);
-  Vector2 text_position = (Vector2){element->rec.x + 5, element->rec.y + 3};
-  DrawTextEx(GetDefaultFont(), data->label, text_position, 16, 1,
-             data->text_color);
-  free((char *)data->label);
-  free(data);
+  Rectangle rec = button->element.rec;
+
+  Vector2 text_position;
+  if (button->text_styling & TEXT_STYLING_CENTER) {
+    Vector2 text_size = MeasureTextEx(GetDefaultFont(), button->label, 16, 1);
+    text_position = (Vector2){rec.x + (rec.width - text_size.x) / 2,
+                              rec.y + (rec.height - text_size.y) / 2};
+  } else {
+    text_position = (Vector2){rec.x, rec.y};
+  }
+
+  Color text_color = ui_default_colors[UI_COLOR_TEXT];
+  DrawRectangleRec(rec, bg_color);
+  DrawRectangleLinesEx(rec, 2, text_color);
+
+  DrawTextEx(GetDefaultFont(), button->label, text_position, 16, 1, text_color);
 }
+
+void free_ui_button(ui_button *button) { free((char *)button->label); }
