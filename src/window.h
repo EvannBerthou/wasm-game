@@ -10,6 +10,13 @@
 // Inline Padding Vector
 #define INPADV(v) ((v.x) + DEFAULT_PADDING), ((v.y) + DEFAULT_PADDING)
 
+typedef enum window_update_action {
+    ACTION_NONE,
+    ACTION_KILL,
+    ACTION_FULLSCREEN,
+    ACTION_SELECT
+} window_update_action;
+
 typedef struct window {
   uint32_t id;
   Vector2 pos;
@@ -28,7 +35,7 @@ typedef struct window {
 } window;
 
 void init_window(window *w, Vector2 pos, Vector2 size, const char *title);
-uint32_t update_window(window *w, ui_context *ui);
+window_update_action update_window(window *w, ui_context *ui);
 void render_window(window *w);
 void disable_dragging();
 

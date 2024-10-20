@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "ui/button.h"
+#include "ui/style.h"
 #include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +34,7 @@ void init_window(window *w, Vector2 pos, Vector2 size, const char *title) {
   w->window_data = NULL;
 }
 
-uint32_t update_window(window *w, ui_context *ui) {
+window_update_action update_window(window *w, ui_context *ui) {
   Rectangle header = get_header(w);
 
   int hovering = CheckCollisionPointRec(GetMousePosition(), header);
@@ -59,23 +60,25 @@ uint32_t update_window(window *w, ui_context *ui) {
   // We need to update the header position in case the window moves. If we
   // don't, we will draw the UI at a previous window position
   header = get_header(w);
-  Color c = GetColor(0xDCDCDCFF);
   const int BUTTON_SIZE = 20;
   Rectangle close_rec = {header.x + header.width - DEFAULT_PADDING -
                              BUTTON_SIZE,
                          header.y, BUTTON_SIZE, BUTTON_SIZE};
-  if (ui_button_label(ui, close_rec, "X", c, BLACK, LIGHTGRAY)) {
-    printf("Close\n");
+  if (ui_button_label(ui, close_rec, "X")) {
+    return ACTION_KILL;
   }
 
   Rectangle fullscreen_rec = {header.x + header.width -
                                   (DEFAULT_PADDING + BUTTON_SIZE) * 2,
                               header.y, BUTTON_SIZE, BUTTON_SIZE};
-  if (ui_button_label(ui, fullscreen_rec, "O", c, BLACK, LIGHTGRAY)) {
-    printf("Fullscreen\n");
+  if (ui_button_label(ui, fullscreen_rec, "O")) {
+    return ACTION_FULLSCREEN;
   }
 
-  return dragging;
+  if (dragging == UINT32_MAX) {
+    return ACTION_NONE;
+  }
+  return dragging == w->id ? ACTION_SELECT : ACTION_NONE;
 }
 
 void render_window(window *w) {

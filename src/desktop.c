@@ -15,6 +15,7 @@
 #define DISABLED_WINDOW UINT32_MAX
 
 window windows[MAX_WINDOWS_COUNT] = {0};
+ui_context window_ui[MAX_WINDOWS_COUNT] = {0};
 uint32_t window_zbuf[MAX_WINDOWS_COUNT] = {-1};
 size_t window_count = 0;
 size_t WINDOW_IDS = 0;
@@ -78,12 +79,7 @@ static void set_top_window(uint32_t id) {
   window_zbuf[window_count - 1] = id;
 }
 
-static void kill_top_window() {
-  if (window_count == 0) {
-    return;
-  }
-
-  window *w = get_focused_window();
+static void kill_window(window *w) {
   printf("Killing %s with ID=%u\n", w->title, w->id);
   if (w == fullscreen_window) {
     fullscreen_window = NULL;
@@ -97,6 +93,7 @@ static void kill_top_window() {
 
   disable_dragging();
   UnloadRenderTexture(w->target);
+  set_top_window(w->id);
   w->id = DISABLED_WINDOW;
 
   window_count--;
@@ -106,15 +103,46 @@ static void kill_top_window() {
   }
 }
 
+static void kill_top_window() {
+  if (window_count == 0) {
+    return;
+  }
+
+  window *w = get_focused_window();
+  kill_window(w);
+}
+
+static void toggle_fullscreen_window(window *w) {
+  assert(w != NULL);
+  if (fullscreen_window) {
+    window *w = fullscreen_window;
+    w->size = prefullscreen_size;
+    UnloadRenderTexture(w->target);
+    w->target = LoadRenderTexture(w->size.x, w->size.y);
+
+    fullscreen_window = NULL;
+    prefullscreen_size = Vector2Zero();
+  } else {
+    fullscreen_window = w;
+    prefullscreen_size = fullscreen_window->size;
+
+    fullscreen_window->size.x = 1200;
+    fullscreen_window->size.y = 900;
+    UnloadRenderTexture(fullscreen_window->target);
+    fullscreen_window->target = LoadRenderTexture(1200, 900);
+  }
+}
+
 void init_desktop() {
   for (int i = 0; i < MAX_WINDOWS_COUNT; i++) {
     windows[i].id = DISABLED_WINDOW;
+    init_ui_context(&window_ui[i]);
   }
 
   add_window(new_clock(900, 45, 300, 200, "Clock"));
-  /*add_window(new_terminal(100, 100, 1000, 600, "Terminal"));*/
-  /*add_window(new_terminal(400, 200, 300, 300, "Terminal 2"));*/
-  /*add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));*/
+  add_window(new_terminal(100, 100, 1000, 600, "Terminal"));
+  add_window(new_terminal(400, 200, 300, 300, "Terminal 2"));
+  add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));
   add_window(new_dungeon(50, 100, 960, 540, "Dungeon"));
 
   init_ui_context(&ctx);
@@ -133,23 +161,7 @@ void update_desktop(void) {
   }
 
   if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_F)) {
-    if (fullscreen_window) {
-      window *w = fullscreen_window;
-      w->size = prefullscreen_size;
-      UnloadRenderTexture(w->target);
-      w->target = LoadRenderTexture(w->size.x, w->size.y);
-
-      fullscreen_window = NULL;
-      prefullscreen_size = Vector2Zero();
-    } else {
-      fullscreen_window = get_focused_window();
-      prefullscreen_size = fullscreen_window->size;
-
-      fullscreen_window->size.x = 1200;
-      fullscreen_window->size.y = 800;
-      UnloadRenderTexture(fullscreen_window->target);
-      fullscreen_window->target = LoadRenderTexture(1200, 800);
-    }
+    toggle_fullscreen_window(get_focused_window());
   }
 
   if (IsKeyPressed(KEY_R)) {
@@ -164,20 +176,37 @@ void update_desktop(void) {
     w->target = LoadRenderTexture(w->size.x, w->size.y);
   }
 
+  window_update_action recieved_action = ACTION_NONE;
+  window *action_emitter = NULL;
+
   if (window_count > 0) {
     for (int i = window_count; i != 0; i--) {
       window *w = get_window_with_id(window_zbuf[i - 1]);
-      uint32_t res = update_window(w, &ctx);
-      if (res != UINT32_MAX) {
-        get_focused_window()->focused = false;
-        set_top_window(res);
-        get_focused_window()->focused = true;
+      window_update_action res = update_window(w, &window_ui[i - 1]);
+      if (recieved_action == ACTION_NONE && res != ACTION_NONE) {
+        action_emitter = w;
+        recieved_action = res;
       }
+    }
+
+    switch (recieved_action) {
+    case ACTION_NONE:
+      break;
+    case ACTION_KILL:
+      kill_window(action_emitter);
+      break;
+    case ACTION_FULLSCREEN:
+      toggle_fullscreen_window(action_emitter);
+      break;
+    case ACTION_SELECT:
+      get_focused_window()->focused = false;
+      set_top_window(action_emitter->id);
+      get_focused_window()->focused = true;
+      break;
     }
   }
 
-  if (ui_button_label(&ctx, (Rectangle){150, 150, 100, 30}, "static button", RED, GREEN,
-                      LIGHTGRAY)) {
+  if (ui_button_label(&ctx, (Rectangle){150, 150, 100, 30}, "static button")) {
     printf("CLICKED\n");
   }
 }
@@ -206,6 +235,7 @@ void render_desktop(void) {
     }
     DrawTextureRec(w->target.texture, (Rectangle){0, 0, w->size.x, -w->size.y},
                    origin, WHITE);
+    render_ui_context(&window_ui[i]);
   }
 
   render_ui_context(&ctx);

@@ -36,6 +36,18 @@ void render_ui_context(ui_context *ui) {
   }
 }
 
+void free_ui_context(ui_context *ui) {
+    while (ui->last->type != UI_NONE) {
+        ui_element *prev = ui->last->prev;
+        free(ui->last->ui_data);
+        ui->last->ui_data = NULL;
+        free(ui->last);
+        ui->last = prev;
+    }
+    free(ui->head);
+    free(ui);
+}
+
 void ui_add_element(ui_context *ui, ui_element *ui_element) {
   assert(ui_element != NULL);
   ui_element->prev = ui->last;
