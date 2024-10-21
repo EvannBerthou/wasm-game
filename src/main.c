@@ -4,6 +4,7 @@
 #include "utils.h"
 
 void init(void) {
+  InitAudioDevice();
   Font loaded_font = GetFontDefault();
   SetDefaultFont(loaded_font);
   init_desktop();

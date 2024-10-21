@@ -92,7 +92,7 @@ bool ui_button_double_image_with_label(ui_context *ui, Rectangle position,
   ui_text_styling styling = TEXT_STYLING_UNDER | TEXT_STYLING_INVERT_COLOR |
                             TEXT_STYLING_CENTER_HORIZONTAL;
   ui_button_type button_type =
-      UI_BUTTON_LABEL | UI_BUTTON_IMAGE | UI_BUTTON_DOUBLE_CLICK;
+      UI_BUTTON_LABEL | UI_BUTTON_IMAGE /*| UI_BUTTON_DOUBLE_CLICK*/;
   return ui_button_all(ui, position, label, styling, button_type, &image,
                        clicked_at);
 }

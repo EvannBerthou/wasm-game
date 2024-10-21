@@ -1,5 +1,6 @@
 #include "apps/Dungeon/main.h"
 #include "apps/clock/main.h"
+#include "apps/simon/main.h"
 #include "apps/terminal/main.h"
 #include "raylib.h"
 #include "raymath.h"
@@ -161,7 +162,7 @@ void init_desktop() {
   init_ui_context(&desktop_ui);
 
   // TODO: Better system, not safe at all!!!!
-  icons_count = 3;
+  icons_count = 4;
 
   {
     Image dungeon_icon = LoadImage("img/Monoko.png");
@@ -190,6 +191,15 @@ void init_desktop() {
                               .name = "Clock",
                               .clicked_at = 0};
   }
+  {
+    Image terminal_icon = LoadImage("img/simon.png");
+    ImageResize(&terminal_icon, 600, 600);
+
+    icons[3] = (desktop_icon){.rec = (Rectangle){250, 150, 600, 600},
+                              .icon = LoadTextureFromImage(terminal_icon),
+                              .name = "Simon !!!",
+                              .clicked_at = 0};
+  }
 }
 
 static void desktop_apps_ui() {
@@ -197,7 +207,6 @@ static void desktop_apps_ui() {
   desktop_icon *ic = &icons[0];
 
   if (ui_button_double_image_with_label(&desktop_ui, ic->rec, ic->name,
-
                                         ic->icon, &ic->clicked_at)) {
     add_window(new_dungeon(100, 100, 960, 540, "Dungeon"));
   }
@@ -213,6 +222,13 @@ static void desktop_apps_ui() {
   if (ui_button_double_image_with_label(&desktop_ui, ic->rec, ic->name,
                                         ic->icon, &ic->clicked_at)) {
     add_window(new_clock(940, 70, 250, 100, "Clock"));
+  }
+
+  ic = &icons[3];
+  if (ui_button_double_image_with_label(&desktop_ui, ic->rec, ic->name,
+                                        ic->icon, &ic->clicked_at)) {
+    add_window(new_simon(940, 70, 250, 100, "JOYEUX ANNIVERSAIRE !!!"));
+    toggle_fullscreen_window(get_focused_window());
   }
 }
 
