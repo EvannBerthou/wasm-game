@@ -47,7 +47,7 @@ static window *get_window_with_id(uint32_t id) {
   assert(false && "Should not be reached");
 }
 
-static window *get_focused_window() {
+static window *get_focused_window(void) {
   return get_window_with_id(window_zbuf[window_count - 1]);
 }
 
@@ -116,7 +116,7 @@ static void kill_window(window *w) {
   }
 }
 
-static void kill_top_window() {
+static void kill_top_window(void) {
   if (window_count == 0) {
     return;
   }
@@ -139,14 +139,14 @@ static void toggle_fullscreen_window(window *w) {
     fullscreen_window = w;
     prefullscreen_size = fullscreen_window->size;
 
-    fullscreen_window->size.x = 1200;
-    fullscreen_window->size.y = 900;
+    fullscreen_window->size.x = GetRenderWidth();
+    fullscreen_window->size.y = GetRenderHeight();
     UnloadRenderTexture(fullscreen_window->target);
-    fullscreen_window->target = LoadRenderTexture(1200, 900);
+    fullscreen_window->target = LoadRenderTexture(GetRenderWidth(), GetRenderHeight());
   }
 }
 
-void init_desktop() {
+void init_desktop(void) {
   for (int i = 0; i < MAX_WINDOWS_COUNT; i++) {
     windows[i].id = DISABLED_WINDOW;
     init_ui_context(&window_ui[i]);
@@ -162,7 +162,7 @@ void init_desktop() {
   init_ui_context(&desktop_ui);
 
   // TODO: Better system, not safe at all!!!!
-  icons_count = 4;
+  icons_count = 3;
 
   {
     Image dungeon_icon = LoadImage("img/Monoko.png");
@@ -191,18 +191,9 @@ void init_desktop() {
                               .name = "Clock",
                               .clicked_at = 0};
   }
-  {
-    Image terminal_icon = LoadImage("img/simon.png");
-    ImageResize(&terminal_icon, 600, 600);
-
-    icons[3] = (desktop_icon){.rec = (Rectangle){250, 150, 600, 600},
-                              .icon = LoadTextureFromImage(terminal_icon),
-                              .name = "Simon !!!",
-                              .clicked_at = 0};
-  }
 }
 
-static void desktop_apps_ui() {
+static void desktop_apps_ui(void) {
 
   desktop_icon *ic = &icons[0];
 
@@ -250,7 +241,7 @@ void update_desktop(void) {
     toggle_fullscreen_window(get_focused_window());
   }
 
-  if (IsKeyPressed(KEY_R)) {
+  if (IsKeyDown(KEY_LEFT_ALT) && IsKeyPressed(KEY_R) && fullscreen_window == NULL) {
     int sign = 1;
     if (IsKeyDown(KEY_LEFT_SHIFT)) {
       sign = -1;

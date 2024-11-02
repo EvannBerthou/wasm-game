@@ -12,7 +12,7 @@ bool isFacingNPC(Npc npc,Vector3 nextPosition){
     return isFacingNpc;
 }
 
-Npc* npcInitiate(){
+Npc* npcInitiate(void){
     int numberOfNpc = 2;
 
     //Npc init

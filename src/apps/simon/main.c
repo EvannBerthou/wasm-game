@@ -13,7 +13,7 @@ Vector2 *balls;
 Color *colors;
 Music music;
 
-void init_balls() {
+void init_balls(void) {
   for (int i = 0; i < ball_count; i++) {
     int r = GetRandomValue(0, 255);
     int g = GetRandomValue(0, 255);

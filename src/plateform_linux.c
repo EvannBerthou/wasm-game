@@ -1,6 +1,6 @@
 #if defined(PLATFORM_DESKTOP)
-#include "raylib.h"
 #include "main.h"
+#include "raylib.h"
 
 int main(void) {
   InitWindow(1200, 800, "raylib game template");
@@ -11,5 +11,7 @@ int main(void) {
     main_loop();
   }
 }
+#else
+void empty_pedantic(void) {}
 
 #endif

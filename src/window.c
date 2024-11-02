@@ -105,4 +105,4 @@ void render_window(window *w) {
   }
 }
 
-void disable_dragging() { dragging = UINT32_MAX; }
+void disable_dragging(void) { dragging = UINT32_MAX; }

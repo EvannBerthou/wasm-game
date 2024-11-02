@@ -37,6 +37,6 @@ typedef struct window {
 void init_window(window *w, Vector2 pos, Vector2 size, const char *title);
 window_update_action update_window(window *w, ui_context *ui);
 void render_window(window *w);
-void disable_dragging();
+void disable_dragging(void);
 
 #endif
