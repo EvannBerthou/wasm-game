@@ -32,6 +32,7 @@ void init_window(window *w, Vector2 pos, Vector2 size, const char *title) {
   strncpy(w->title, title, 31);
   w->title[31] = '\0';
   w->window_data = NULL;
+  memset(w->messages, 0, MAX_WINDOW_MESSAGE_LENGTH);
 }
 
 window_update_action update_window(window *w, ui_context *ui) {
@@ -106,3 +107,28 @@ void render_window(window *w) {
 }
 
 void disable_dragging(void) { dragging = UINT32_MAX; }
+
+void send_window_message(window *w, const char *msg) {
+  if (w->message_count == MAX_WINDOW_MESSAGE_COUNT) {
+    printf("Error: Can't add any more message to window %d\n", w->id);
+    return;
+  }
+  strncpy(w->messages[w->message_count], msg, MAX_WINDOW_MESSAGE_LENGTH);
+  w->message_count++;
+}
+
+const char *read_next_message(window *w) {
+  static char last_message[MAX_WINDOW_MESSAGE_LENGTH] = {0};
+  if (w->message_count == 0) {
+    return NULL;
+  }
+
+  char *message = w->messages[w->message_count - 1];
+  if (*message == '\0') {
+    return NULL;
+  }
+  strncpy(last_message, message, MAX_WINDOW_MESSAGE_LENGTH);
+  memset(message, 0, MAX_WINDOW_MESSAGE_LENGTH);
+  w->message_count--;
+  return last_message;
+}

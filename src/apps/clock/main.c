@@ -1,6 +1,7 @@
 #include "main.h"
 #include "raylib.h"
 #include "window.h"
+#include <stdio.h>
 #include <time.h>
 
 window new_clock(int posx, int posy, int sizex, int sizey, const char *title) {

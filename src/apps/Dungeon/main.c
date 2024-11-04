@@ -5,6 +5,7 @@
 #include "rcamera.h"
 #include "stddef.h"
 #include "window.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -80,6 +81,25 @@ void update_dungeon(window *w) {
     }
   }
 
+  const char *message = read_next_message(w);
+  if (message != NULL && data->animState == NONE) {
+    if (strcmp(message, "up") == 0) {
+      if ((checkX >= 0 && checkX <= MAP_SIZE_X - 1) &&
+          (checkZ >= 0 && checkZ <= MAP_SIZE_Y - 1)) {
+        if (data->map[checkX][checkZ] == 1) {
+          if (!data->isFacingNpc)
+            data->forwardData.currentTime = 0;
+        }
+      }
+    } else if (strcmp(message, "left") == 0) {
+      data->turnData.currentTime = 0;
+      data->gauche = true;
+    } else if (strcmp(message, "right") == 0) {
+      data->turnData.currentTime = 0;
+      data->gauche = false;
+    }
+  }
+
   if (w->focused) {
     if (data->gameState == IN_GAME) {
       // Input
@@ -102,11 +122,6 @@ void update_dungeon(window *w) {
         data->gameState = IN_MENU;
         stateSwitch = false;
       }
-
-      // Function calling
-      //--------------------------------------------------------------------------------------
-      checkTurn(&data->turnData, &data->animState, data->gauche);
-      checkForward(&data->forwardData, &data->animState);
     }
 
     if (data->gameState == IN_MENU) {
@@ -115,6 +130,11 @@ void update_dungeon(window *w) {
       }
     }
   }
+
+  // Function calling
+  //--------------------------------------------------------------------------------------
+  checkTurn(&data->turnData, &data->animState, data->gauche);
+  checkForward(&data->forwardData, &data->animState);
 }
 
 void render_dungeon(window *w) {

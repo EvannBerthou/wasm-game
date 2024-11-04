@@ -22,9 +22,13 @@ typedef struct terminal_data {
   pthread_t tid;
 } terminal_data;
 
+struct terminal_thread;
+typedef void(end_cmd_callback)(struct terminal_thread *tt);
+
 typedef struct terminal_thread {
   terminal_data *data;
   const char *args;
+  end_cmd_callback *callback;
 } terminal_thread;
 
 window new_terminal(int posx, int posy, int sizex, int sizey,
@@ -32,6 +36,7 @@ window new_terminal(int posx, int posy, int sizex, int sizey,
 void init_terminal(window *w);
 void update_terminal(window *w);
 void render_terminal(window *w);
+void free_terminal(window *w);
 
 void console_log(terminal_data *data, const char *log);
 void handle_command(terminal_data *data);
@@ -43,6 +48,7 @@ void handle_command(terminal_data *data);
     terminal_thread *terminal_thread_args = (terminal_thread *)argsv;          \
     terminal_data *data = terminal_thread_args->data;                          \
     const char *args = terminal_thread_args->args;                             \
+    (void)args;                                                                \
     void *ret_val = 0;                                                         \
     {
 
@@ -50,9 +56,9 @@ void handle_command(terminal_data *data);
   }                                                                            \
   ret(0);                                                                      \
   end_ret:                                                                     \
-  terminal_thread_args->data->tid = 0;                                         \
-  new_line(data);                                                              \
-  free(argsv);                                                                 \
+  if (terminal_thread_args->callback != NULL) {                                \
+    terminal_thread_args->callback(terminal_thread_args);                      \
+  }                                                                            \
   return (void *)ret_val;                                                      \
   }
 
@@ -71,5 +77,7 @@ typedef struct command {
 
 #define COMMAND(cmd_name)                                                      \
   { .name = #cmd_name, .func = cmd_##cmd_name }
+
+cmd_func *get_command_function_by_name(char *cmd);
 
 #endif

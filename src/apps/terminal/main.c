@@ -1,5 +1,6 @@
 #include "main.h"
 #include "../../utils.h"
+#include "desktop.h"
 #include "raylib.h"
 #include <assert.h>
 #include <ctype.h>
@@ -14,7 +15,8 @@ window new_terminal(int posx, int posy, int sizex, int sizey,
                     const char *title) {
   window w = {.init = init_terminal,
               .update = update_terminal,
-              .render = render_terminal};
+              .render = render_terminal,
+              .free = free_terminal};
   init_window(&w, (Vector2){posx, posy}, (Vector2){sizex, sizey}, title);
   w.window_data = malloc(sizeof(terminal_data));
   assert(w.window_data != NULL);
@@ -54,6 +56,16 @@ static char *trim(char *base) {
     ;
   *(end + 1) = '\0';
   return base;
+}
+
+static char *shift_args(const char *cmd) {
+  char *args = strchr(cmd, ' ');
+  if (args != NULL) {
+    while (*args != '\0' && *args == ' ') {
+      args++;
+    }
+  }
+  return args;
 }
 
 void init_terminal(window *w) {
@@ -146,6 +158,20 @@ void render_terminal(window *w) {
   pthread_mutex_unlock(&data->cmd_mutex);
 }
 
+void free_terminal(window *w) {
+  terminal_data *data = (terminal_data *)w->window_data;
+  assert(data != NULL && "Data should never be NULL");
+
+  terminal_line *head = data->commands;
+  while (head != NULL) {
+    terminal_line *prev = head->prev;
+    head->prev = NULL;
+    free(head);
+    head = prev;
+  }
+  data->commands = NULL;
+}
+
 void console_log(terminal_data *data, const char *log) {
   pthread_mutex_lock(&data->cmd_mutex);
   {
@@ -158,16 +184,21 @@ void console_log(terminal_data *data, const char *log) {
   pthread_mutex_unlock(&data->cmd_mutex);
 }
 
+static void thread_end_callback(terminal_thread *tt) {
+  tt->data->tid = 0;
+  new_line(tt->data);
+  free((void *)tt->args);
+  free(tt);
+}
+
+// TODO: Threads create race conditions on TextFormat. Sometime, a TextFormat
+// will be replaced by a "60 FPS". TextFormat is not thread safe
 static void call_cmd(terminal_data *data, const char *cmd, cmd_func func) {
-  char *args = strchr(cmd, ' ');
-  if (args != NULL) {
-    while (*args != '\0' && *args == ' ') {
-      args++;
-    }
-  }
+  char *args = shift_args(cmd);
   terminal_thread *tt = malloc(sizeof(terminal_thread));
   tt->data = data;
-  tt->args = args;
+  tt->args = strdup(args);
+  tt->callback = &thread_end_callback;
   int err = pthread_create(&data->tid, NULL, func, (void *)tt);
   if (err) {
     console_log(data, TextFormat("Error starting thread: '%s'", strerror(err)));
@@ -189,50 +220,130 @@ BEGIN_CMD(sleep) {
     console_log(data, "sleep <seconds>");
     ret(0);
   }
-
   int seconds = 0;
-  bool started = false;
-  while (*args != '\0') {
-    if (*args >= '0' && *args <= '9') {
-      if (!started)
-        started = true;
-      seconds *= 10;
-      seconds += (*args - '0');
-    } else {
-      if (*args != ' ' || (*args == ' ' && !started)) {
-        console_log(data, "sleep <seconds>");
-        ret(0);
-      }
-    }
-    args++;
+  if (!strtoint(args, &seconds)) {
+    console_log(data, "sleep <seconds>");
+    ret(0);
   }
   sleep(seconds);
 }
 END_CMD()
 
 BEGIN_CMD(help) {
-    (void)args;
-    console_log(data, "echo <text>, sleep <seconds>, help");
+  console_log(data,
+              "echo <text>, sleep <seconds>, help, ps, send <pid> <text>");
 }
 END_CMD()
 
-command commands[] = {COMMAND(echo), COMMAND(sleep), COMMAND(help)};
+BEGIN_CMD(ps) {
+  desktop *d = get_desktop();
+  for (size_t i = 0; i < MAX_WINDOWS_COUNT; i++) {
+    if (d->windows[i].id != DISABLED_WINDOW) {
+      console_log(data, TextFormat("ID=%d TITLE=%s\n", d->windows[i].id,
+                                   d->windows[i].title));
+    }
+  }
+}
+END_CMD()
+
+BEGIN_CMD(send) {
+  int part_count = 0;
+  const char **parts = TextSplit(args, ' ', &part_count);
+  if (part_count != 2) {
+    console_log(data, "send <pid> <text>");
+    ret(0);
+  }
+  int iwid = 0;
+  if (!strtoint(parts[0], &iwid)) {
+    console_log(data, "send <pid> <text>");
+    ret(0);
+  }
+
+  uint32_t wid = iwid;
+  desktop *d = get_desktop();
+  window *w = NULL;
+  for (size_t i = 0; i < MAX_WINDOWS_COUNT; i++) {
+    if (d->windows[i].id == wid) {
+      w = &d->windows[i];
+      break;
+    }
+  }
+
+  if (w == NULL) {
+    console_log(data, TextFormat("No window with ID=%d", wid));
+    ret(0);
+  }
+
+  console_log(data, TextFormat("Sending '%s' to ID=%d\n", parts[1], wid));
+  send_window_message(w, parts[1]);
+}
+END_CMD()
+
+const char *programs[][128] = {
+    {"echo a", "help", "sleep 3", "ps", "send 0 left", "zibzoub", NULL},
+    {"send 0 left", "sleep 1", "send 0 up", "sleep 1", "send 0 up", "sleep 1",
+     "send 0 right", "sleep 1", "send 0 up", "sleep 1", "send 0 up", "sleep 1",
+     "send 0 left", "sleep 1", "send 0 up", NULL},
+    {"echo b", "echo c", NULL},
+};
+
+BEGIN_CMD(exec) {
+  int program_id = 0;
+  if (!strtoint(args, &program_id)) {
+    console_log(data, TextFormat("exec <id>"));
+    ret(0);
+  }
+
+  if (program_id >= 2) {
+    console_log(data, "program_id needs to be between 0 and 1 (inclusive).");
+    ret(0);
+  }
+
+  const char **program = programs[program_id];
+  char local_cmd_buf[128] = {0};
+  while (*program != NULL) {
+    strncpy(local_cmd_buf, *program, 128);
+    char *cmd_trimmed = trim(local_cmd_buf);
+    cmd_func *f = get_command_function_by_name(cmd_trimmed);
+    if (f != NULL) {
+      const char *exec_args = shift_args(cmd_trimmed);
+      console_log(data, TextFormat("> %s", cmd_trimmed));
+      terminal_thread tt = {.data = data, .args = exec_args, .callback = NULL};
+      f(&tt);
+    } else {
+      console_log(data, TextFormat("Unknown command '%s'", cmd_trimmed));
+      new_line(data);
+    }
+    program++;
+  }
+}
+END_CMD()
+
+command commands[] = {COMMAND(echo), COMMAND(sleep), COMMAND(help),
+                      COMMAND(ps),   COMMAND(send),  COMMAND(exec)};
 size_t command_count = sizeof(commands) / sizeof(command);
 
 void handle_command(terminal_data *data) {
-  const char *cmd = trim(data->commands->content);
-  if (*cmd == '\0') {
+  char *cmd_trimmed = trim(data->commands->content);
+  if (*cmd_trimmed == '\0') {
     new_line(data);
     return;
   }
 
+  cmd_func *f = get_command_function_by_name(cmd_trimmed);
+  if (f != NULL) {
+    call_cmd(data, cmd_trimmed, f);
+  } else {
+    console_log(data, TextFormat("Unknown command '%s'", cmd_trimmed));
+    new_line(data);
+  }
+}
+
+cmd_func *get_command_function_by_name(char *cmd) {
   for (size_t i = 0; i < command_count; i++) {
     if (PREFIX(commands[i].name, cmd)) {
-      call_cmd(data, cmd, commands[i].func);
-      return;
+      return commands[i].func;
     }
   }
-
-  console_log(data, TextFormat("Unknown command '%s'", cmd));
-  new_line(data);
+  return NULL;
 }

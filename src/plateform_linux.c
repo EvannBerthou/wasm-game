@@ -10,8 +10,9 @@ int main(void) {
   while (!WindowShouldClose()) {
     main_loop();
   }
+
+  // TODO: Proper exiting
 }
 #else
 void empty_pedantic(void) {}
-
 #endif

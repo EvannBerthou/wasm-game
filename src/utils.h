@@ -13,4 +13,6 @@ static inline bool KeyPressed(int key) {
 void SetDefaultFont(Font font);
 Font GetDefaultFont(void);
 
+bool strtoint(const char *str, int *result);
+
 #endif
