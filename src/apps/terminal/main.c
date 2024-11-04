@@ -288,22 +288,31 @@ const char *programs[][128] = {
 };
 
 BEGIN_CMD(exec) {
-  int program_id = 0;
-  if (!strtoint(args, &program_id)) {
-    console_log(data, TextFormat("exec <id>"));
+  if (args == NULL) {
+    console_log(data, "exec <filename>");
     ret(0);
   }
 
-  if (program_id >= 2) {
-    console_log(data, "program_id needs to be between 0 and 1 (inclusive).");
+  char program[10][32] = {0};
+  const char *filename = get_file_path(args);
+  FILE *f = fopen(TextFormat(filename, filename), "r");
+  if (f == NULL) {
+    console_log(data, TextFormat("Error opening file '%s'", filename));
     ret(0);
   }
 
-  const char **program = programs[program_id];
-  char local_cmd_buf[128] = {0};
-  while (*program != NULL) {
-    strncpy(local_cmd_buf, *program, 128);
-    char *cmd_trimmed = trim(local_cmd_buf);
+  int line = 0;
+  while (fgets(program[line], 32, f) && line < 9) {
+    program[line][strcspn(program[line], "\n")] = 0;
+    printf("Line=%d : '%s'\n", line, program[line]);
+    line++;
+  }
+  fclose(f);
+  printf("File read\n");
+  line = 0;
+
+  while (*program[line] != '\0') {
+    char *cmd_trimmed = trim(program[line]);
     cmd_func *f = get_command_function_by_name(cmd_trimmed);
     if (f != NULL) {
       const char *exec_args = shift_args(cmd_trimmed);
@@ -314,7 +323,7 @@ BEGIN_CMD(exec) {
       console_log(data, TextFormat("Unknown command '%s'", cmd_trimmed));
       new_line(data);
     }
-    program++;
+    line++;
   }
 }
 END_CMD()

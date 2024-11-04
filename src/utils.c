@@ -12,8 +12,7 @@ Font GetDefaultFont(void) {
   return _font;
 }
 
-
-//TODO: Need to handle negatives ?
+// TODO: Need to handle negatives ?
 bool strtoint(const char *str, int *result) {
   int i = 0;
   bool started = false;
@@ -34,3 +33,16 @@ bool strtoint(const char *str, int *result) {
   *result = i;
   return true;
 }
+
+// TODO: Possible injections (for example with filename as "../").
+#if defined(PLATFORM_WEB)
+const char *get_file_path(const char *base) {
+  return TextFormat("/disk/%s", base);
+}
+#elif defined(PLATFORM_DESKTOP)
+const char *get_file_path(const char *base) {
+  return TextFormat("user_data/%s", base);
+}
+#else
+#error Unsupported plateform
+#endif

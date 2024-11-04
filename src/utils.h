@@ -14,5 +14,6 @@ void SetDefaultFont(Font font);
 Font GetDefaultFont(void);
 
 bool strtoint(const char *str, int *result);
+const char *get_file_path(const char *base);
 
 #endif

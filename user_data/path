@@ -1,0 +1,9 @@
+echo bonjour
+echo ok
+echo salut
+sleep 3
+ps
+
+
+
+

@@ -29,5 +29,5 @@ int main(void) {
   emscripten_set_main_loop(main_loop, 0, 1);
 }
 #else
-void empty_pedantic() {}
+void empty_pedantic(void) {}
 #endif

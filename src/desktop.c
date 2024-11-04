@@ -1,7 +1,7 @@
 #include "desktop.h"
 #include "apps/Dungeon/main.h"
 #include "apps/clock/main.h"
-#include "apps/simon/main.h"
+#include "apps/notepad/main.h"
 #include "apps/terminal/main.h"
 #include "raylib.h"
 #include "raymath.h"
@@ -144,7 +144,7 @@ void init_desktop(void) {
   init_ui_context(&d.desktop_ui);
 
   // TODO: Better system, not safe at all!!!!
-  d.icons_count = 3;
+  d.icons_count = 4;
 
   {
     Image dungeon_icon = LoadImage("img/Monoko.png");
@@ -171,6 +171,15 @@ void init_desktop(void) {
     d.icons[2] = (desktop_icon){.rec = (Rectangle){5, 215, 60, 60},
                                 .icon = LoadTextureFromImage(terminal_icon),
                                 .name = "Clock",
+                                .clicked_at = 0};
+  }
+  {
+    Image terminal_icon = LoadImage("img/notepad.png");
+    ImageResize(&terminal_icon, 60, 60);
+
+    d.icons[3] = (desktop_icon){.rec = (Rectangle){5, 300, 60, 60},
+                                .icon = LoadTextureFromImage(terminal_icon),
+                                .name = "Notepad",
                                 .clicked_at = 0};
   }
 }
@@ -200,8 +209,7 @@ static void desktop_apps_ui(void) {
   ic = &d.icons[3];
   if (ui_button_double_image_with_label(&d.desktop_ui, ic->rec, ic->name,
                                         ic->icon, &ic->clicked_at)) {
-    add_window(new_simon(940, 70, 250, 100, "JOYEUX ANNIVERSAIRE !!!"));
-    toggle_fullscreen_window(get_focused_window());
+    add_window(new_notepad(200, 100, 500, 500, "Notepad"));
   }
 }
 
